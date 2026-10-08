@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Service Booking</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px;
+            background: #f2f4f7;
+        }
+
+        .container {
+            max-width: 550px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        h1 {
+            text-align: center;
+            color: #222;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .submit-btn {
+            background: #222;
+            color: white;
+        }
+
+        .reset-btn {
+            background: #ddd;
+        }
+
+        #confirmation {
+            display: none;
+            margin-top: 25px;
+            padding: 18px;
+            background: #e8f7e8;
+            border: 2px solid #4caf50;
+            border-radius: 8px;
+            color: #176b1c;
+            line-height: 1.7;
+        }
+
+        .error {
+            color: red;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Vehicle Service Booking</h1>
+    <p class="subtitle">Book your vehicle service easily</p>
+
+    <form id="serviceForm">
+
+        <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text" id="customerName" placeholder="Enter your name">
+        </div>
+
+        <div class="form-group">
+            <label>Phone Number</label>
+            <input type="text" id="phone" placeholder="Enter 10-digit phone number">
+        </div>
+
+        <div class="form-group">
+            <label>Vehicle Number</label>
+            <input type="text" id="vehicleNumber" placeholder="Example: TN38AB1234">
+        </div>
+
+        <div class="form-group">
+            <label>Vehicle Type</label>
+            <select id="vehicleType">
+                <option value="">Select vehicle type</option>
+                <option>Car</option>
+                <option>Bike</option>
+                <option>Scooter</option>
+                <option>SUV</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Service Type</label>
+            <select id="serviceType">
+                <option value="">Select service type</option>
+                <option>General Service</option>
+                <option>Oil Change</option>
+                <option>Full Service</option>
+                <option>Engine Check</option>
+                <option>Brake Service</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Preferred Date</label>
+            <input type="date" id="serviceDate">
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="submit-btn">Book Service</button>
+            <button type="reset" class="reset-btn">Reset</button>
+        </div>
+
+    </form>
+
+    <div id="confirmation"></div>
+
+</div>
+
+<script>
+document.getElementById("serviceRecordForm").addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const service = {
+        serviceId: document.getElementById("serviceId").value,
+        vehicleNumber: document.getElementById("recordVehicleNumber").value,
+        customerName: document.getElementById("recordCustomerName").value,
+        serviceType: document.getElementById("recordServiceType").value,
+        serviceDate: document.getElementById("recordServiceDate").value,
+        cost: Number(document.getElementById("serviceCost").value)
+    };
+
+    try {
+        const response = await fetch("/services", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(service)
+        });
+
+        const data = await response.json();
+
+        document.getElementById("recordMessage").innerHTML =
+            data.message;
+
+        if (response.ok) {
+            document.getElementById("serviceRecordForm").reset();
+            displayServices();
+        }
+
+    } catch (error) {
+        document.getElementById("recordMessage").innerHTML =
+            "Unable to connect to server.";
+    }
+});
+
+async function displayServices() {
+
+    const response = await fetch("/services");
+    const services = await response.json();
+
+    const tableBody = document.getElementById("serviceTableBody");
+
+    tableBody.innerHTML = "";
+
+    services.forEach(function(service) {
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${service.serviceId}</td>
+            <td>${service.vehicleNumber}</td>
+            <td>${service.customerName}</td>
+            <td>${service.serviceType}</td>
+            <td>${service.serviceDate}</td>
+            <td>₹${service.cost}</td>
+            <td>
+                <button onclick="deleteService('${service.serviceId}')">
+                    Delete
+                </button>
+            </td>
+        `;
+
+        tableBody.appendChild(row);
+    });
+
+    document.getElementById("serviceTable").style.display = "table";
+}
+
+async function deleteService(serviceId) {
+
+    const response = await fetch("/services/" + serviceId, {
+        method: "DELETE"
+    });
+
+    const data = await response.json();
+
+    document.getElementById("recordMessage").innerHTML =
+        data.message;
+
+    displayServices();
+}
+</script>
+<hr>
+
+<div class="container">
+
+    <h1>Vehicle Service Records</h1>
+
+    <p class="subtitle">
+        Manage vehicle service records using Node.js and MongoDB
+    </p>
+
+    <form id="serviceRecordForm">
+
+        <div class="form-group">
+            <label>Service ID</label>
+            <input type="text" id="serviceId" placeholder="Example: S001" required>
+        </div>
+
+        <div class="form-group">
+            <label>Vehicle Number</label>
+            <input type="text" id="recordVehicleNumber" placeholder="Example: TN38AB1234" required>
+        </div>
+
+        <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text" id="recordCustomerName" placeholder="Enter customer name" required>
+        </div>
+
+        <div class="form-group">
+            <label>Service Type</label>
+            <input type="text" id="recordServiceType" placeholder="Example: General Service" required>
+        </div>
+
+        <div class="form-group">
+            <label>Service Date</label>
+            <input type="date" id="recordServiceDate" required>
+        </div>
+
+        <div class="form-group">
+            <label>Cost</label>
+            <input type="number" id="serviceCost" placeholder="Enter cost" required>
+        </div>
+
+        <div class="buttons">
+            <button type="submit" class="submit-btn">
+                Add Service Record
+            </button>
+
+            <button type="button" class="submit-btn" onclick="displayServices()">
+                Display All Records
+            </button>
+        </div>
+
+    </form>
+
+    <div id="recordMessage"></div>
+
+    <table id="serviceTable" style="width:100%; margin-top:25px; border-collapse:collapse; display:none;">
+        <thead>
+            <tr>
+                <th>Service ID</th>
+                <th>Vehicle Number</th>
+                <th>Customer Name</th>
+                <th>Service Type</th>
+                <th>Service Date</th>
+                <th>Cost</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody id="serviceTableBody"></tbody>
+    </table>
+
+</div>
+</body>
+</html>
